@@ -1,5 +1,5 @@
-console.log('server')
+import render from "./render";
+console.log("server");
 
-let test = 1;
-
-export default (chunks) => console.log(chunks)||({ ...chunks, test: test++})
+export default ({ assetsByChunkName }) => (req, res) =>
+  res.send(render(Object.values(assetsByChunkName)));

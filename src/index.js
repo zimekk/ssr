@@ -1,6 +1,15 @@
-import React from 'react'
-import { hydrate } from 'react-dom'
-import App from './components/App';
+const express = require("express");
+const path = require("path");
+const app = express();
+const { PORT = 8080 } = process.env;
 
-hydrate(<App />, document.getElementById('root'))
-console.log('client')
+const contentBase = path.resolve(__dirname, "../build");
+
+app
+  .get(
+    "/index.html",
+    require("../lib/server").default(require("../build/stats"))
+  )
+  .use(express.static(contentBase));
+
+app.listen(PORT, () => console.log(`Example app listening on port ${PORT}!`));

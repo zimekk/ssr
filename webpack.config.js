@@ -1,174 +1,124 @@
-// const HtmlWebpackPlugin = require('html-webpack-plugin')
-const nodeExternals = require('webpack-node-externals');
-const { RawSource } = require('webpack-sources');
+const path = require("path");
+const nodeExternals = require("webpack-node-externals");
+const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+const { DefinePlugin } = require("webpack");
+const { StatsWriterPlugin } = require("webpack-stats-plugin");
 
-const PLUGIN_NAME = 'MyWebpackPlugin';
+const contentBase = path.join(__dirname, "build");
 
-class MyWebpackPlugin {
-	constructor(options = {}) {
-		this.options = options;
-		this.plugin = this.plugin.bind(this);
-	}
+const devServer = {
+  // lazy: true,
+  // filename: 'render.js',
+  // publicPath: path.join(__dirname, 'build'),
+  // publicPath: '/',
+  contentBase,
+  // contentBasePublicPath: '',
+  before(app, server) {
+    const data = {
+      server: { server: (req, res) => res.send(404) },
+      client: {},
+    };
 
-	plugin(compilation, callback) {
-		const {
-			filename = 'index.html',
-			publicPath = '',
-			template,
-			context,
-			chunks,
-		} = this.options;
+    app.get("/index.html", (req, res) =>
+      data.server.server.default(data.stats)(req, res)
+    );
 
-const template = () =>
+    server.compiler.compilers.forEach((compiler) => {
+      compiler.hooks.done.tap("srv", (stats) => {
+        console.log("compilation");
+        // console.log(stats.compilation)
+        console.log("entrypoints", stats.compilation.entrypoints.keys());
+        // console.log(stats.compilation.chunks)
 
-		Promise.resolve(template(options)).then(source => {
-			compilation.assets[filename] = new RawSource(source);
-			callback();
-		});
+        Object.assign(
+          data,
+          stats.compilation.assets["stats.json"] && {
+            stats: JSON.parse(stats.compilation.assets["stats.json"].source()),
+          }
+        );
 
-
-/*
-
-		const files = getFiles(
-			normalizeEntrypoints(compilation.entrypoints),
-			chunks
-		);
-
-		const options = Object.assign({}, { publicPath }, context, files);
-
-		Promise.resolve((template || defaultTemplate)(options)).then(source => {
-			compilation.assets[filename] = new RawSource(source);
-			callback();
-		});
-*/
-  }
-
-	apply(compiler) {
-		compiler.hooks.emit.tapAsync(PLUGIN_NAME, this.plugin);
-	}
-}
-
-
-module.exports = [{
-  devServer: {
-    // lazy: true,
-    // filename: 'render.js',
-before(app, server) {
-
-  let resolveRender
-
-  const chunks = {};
-  const render = chunks => Promise.all([dfd.render, dfd.chunks]).then(() => render.fn(chunks));
-
-  let addChunks;
-  let setRender;
-  const dfd = {
-    chunks: new Promise(resolve => {
-      addChunks = ch => {
-        Object.assign(chunks, ch);
-        resolve();
-      };
-    }),
-    render: new Promise(resolve => {
-      setRender = fn => {
-        Object.assign(render, { fn });
-        resolve();
-      };
-    }),
-  };
-
-  // const setRender = fn => {
-  //   Object.assign(render, { fn });
-  //   resolveRender();
-  // };
-  // const addChunks = ch => {
-  //   Object.assign(chunks, ch);
-  //   resolveChunks();
-  // };
-
-// console.log('---render a')
-//   render('a').then(r => console.log('---render.then a', r))
-//   console.log('---render b')
-//   render('b').then(r => console.log('---render.then b', r))
-
-//   setTimeout(() => {
-//     console.log('---setRender t')
-// setRender(t => console.log('t', t))
-//   }, 200)
-// setTimeout(() => {
-//   console.log('---render c')
-//   render('c').then(r => console.log('---render.then c', r))  
-// }, 100)
-// console.log('---render d')
-// render('d').then(r => console.log('---render.then d', r))
-
-  app.get('/', (req, res) => render(chunks).then(html => res.send(html)))
-
-
-  server.compiler.compilers
-  .forEach(compiler => {
-    compiler.hooks.done.tap('srv', (stats) => {
-      console.log('compilation')
-      // console.log(stats.compilation)
-      console.log('entrypoints', stats.compilation.entrypoints.keys())
-      // console.log(stats.compilation.chunks)
-
-      // const { client, server } = 
-      stats.compilation.chunks.forEach(({ id, files }) => {
-        // ...chunks,
-        // [compiler.target]: {
-        //   ...chunks[compiler.target],
-        //   [id]: files
-        // }
-        console.log('target', compiler.options.target)
-        if (compiler.options.target === 'node') {
-          const [file] = files;
-          console.log('file', file)
-          const asset = stats.compilation.assets[file];
-          setRender(eval(asset.source()).default);
-        } else {
-          addChunks({
-            [id]: files
-          })
-        }
-      })
-    })
-  })
-}
+        stats.compilation.chunks.forEach(({ id, files }) => {
+          console.log("target", compiler.options.target, compiler.options.name);
+          if (compiler.options.name === "server") {
+            const [file] = files;
+            const asset = stats.compilation.assets[file];
+            Object.assign(data[compiler.options.name], {
+              [id]: require("require-from-string")(asset.source()),
+            });
+          } else {
+            Object.assign(data[compiler.options.name], {
+              [id]: files,
+            });
+          }
+        });
+      });
+    });
   },
-  // entry: {
-  //   client: require.resolve('./src')
-  // },
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        use: 'babel-loader'
-      }
-    ]
+};
+
+const plugins = [
+  new DefinePlugin({
+    "process.env": {
+      ROOT_ELEMENT: JSON.stringify("root"),
+    },
+  }),
+];
+
+const rules = [
+  {
+    test: /\.js$/,
+    use: "babel-loader",
   },
-  plugins: [
-    // new HtmlWebpackPlugin({
-    //   template: require.resolve('./src/server/render')
-    // })
-  ]
-}, {
-  watch: true,
-  target: 'node',
-  externals: [nodeExternals()],
-  // entry: {
-  //   server: require.resolve('./src/server')
-  // },
-  entry: require.resolve('./src/server/render'),
-  module: {
-    rules: [
-      {
-        test: /\.js$/,
-        use: 'babel-loader'
-      }
-    ]
+  {
+    test: /\.(eot|svg|ttf|woff|woff2)$/,
+    use: {
+      loader: "url-loader",
+    },
   },
-  output: {
-    filename: 'render.js'
-  }
-}]
+  {
+    test: /\.(ico)$/,
+    use: {
+      loader: "file-loader",
+      options: {
+        name: "[name].[ext]",
+      },
+    },
+  },
+];
+
+module.exports = [
+  {
+    name: "client",
+    devServer,
+    entry: { client: require.resolve("./src/client") },
+    module: {
+      rules,
+    },
+    output: {
+      publicPath: "/",
+      path: contentBase,
+    },
+    plugins: [
+      ...plugins,
+      new CleanWebpackPlugin(),
+      new StatsWriterPlugin({
+        filename: "stats.json", // Default
+      }),
+    ],
+  },
+  {
+    name: "server",
+    watch: true,
+    target: "node",
+    externals: [nodeExternals()],
+    entry: { server: require.resolve("./src/server") },
+    module: {
+      rules,
+    },
+    output: {
+      libraryTarget: "commonjs2",
+      path: path.resolve(__dirname, "lib"),
+    },
+    plugins: [...plugins, new CleanWebpackPlugin()],
+  },
+];

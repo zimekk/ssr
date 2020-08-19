@@ -9,15 +9,25 @@
       "@babel/preset-react"
     ]
   },
+  "husky": {
+    "hooks": {
+      "update": "yarn upgrade-interactive --latest",
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{js,json,md,html,scss}": "prettier --write"
+  },
   "scripts": {
-    "start": "webpack-dev-server --mode development",
+    "start": "nodemon src",
+    "start:dev": "webpack-dev-server --mode development",
     "debug": "node --inspect node_modules/webpack-dev-server/bin/webpack-dev-server --mode development",
     "build": "webpack --mode production",
     "serve": "webpack-dev-server --mode production --inline false --host 0.0.0.0",
     "update": "yarn upgrade-interactive --latest"
   },
   "dependencies": {
-    "@babel/core": "^7.11.0",
+    "@babel/core": "^7.11.1",
     "@babel/preset-env": "^7.11.0",
     "@babel/preset-react": "^7.10.4",
     "babel-loader": "^8.1.0",
@@ -29,7 +39,18 @@
     "webpack": "^4.44.1",
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0",
-    "webpack-node-externals": "^2.5.0",
+    "webpack-node-externals": "^2.5.1",
     "webpack-sources": "^1.4.3"
+  },
+  "devDependencies": {
+    "clean-webpack-plugin": "^3.0.0",
+    "file-loader": "^6.0.0",
+    "husky": "^4.2.5",
+    "lint-staged": "^10.2.11",
+    "nodemon": "^2.0.4",
+    "prettier": "^2.0.5",
+    "require-from-string": "^2.0.2",
+    "url-loader": "^4.1.0",
+    "webpack-stats-plugin": "^0.3.2"
   }
 }
