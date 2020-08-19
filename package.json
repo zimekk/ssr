@@ -50,6 +50,7 @@
     "nodemon": "^2.0.4",
     "prettier": "^2.0.5",
     "require-from-string": "^2.0.2",
+    "serialize-javascript": "^4.0.0",
     "url-loader": "^4.1.0",
     "webpack-stats-plugin": "^0.3.2"
   }
