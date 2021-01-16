@@ -90,7 +90,12 @@ module.exports = [
   {
     name: "client",
     devServer,
-    entry: { client: require.resolve("./src/client") },
+    entry: {
+      client: [
+        require.resolve("./src/assets/favicon.ico"),
+        require.resolve("./src/client"),
+      ],
+    },
     module: {
       rules,
     },

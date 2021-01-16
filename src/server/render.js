@@ -8,8 +8,8 @@ export default (chunks) => `<!DOCTYPE html>
 ${renderToString(
   <html lang="en">
     <head>
-      <meta charset="utf-8" />
-      <link rel="icon" href={require("../assets/favicon.ico")} />
+      <meta charSet="utf-8" />
+      <link rel="icon" href={require("../assets/favicon.ico").default} />
       <meta name="viewport" content="width=device-width, initial-scale=1" />
       <meta name="theme-color" content="#000000" />
       <meta name="description" content="Web site created using ssr" />
