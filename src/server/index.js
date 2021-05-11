@@ -1,5 +1,6 @@
 import render from "./render";
-console.log("server");
+console.log(["server"]);
 
-export default ({ assetsByChunkName }) => (req, res) =>
-  res.send(render(Object.values(assetsByChunkName)));
+export default ({ assetsByChunkName }) =>
+  (req, res) =>
+    res.send(render(Object.values(assetsByChunkName)));
